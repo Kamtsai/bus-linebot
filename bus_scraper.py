@@ -16,13 +16,11 @@ def get_bus_arrival_time(url, station_name):
     if chrome_bin:
         chrome_options.binary_location = chrome_bin
 
-    chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
-    if not chromedriver_path:
-        print("警告：CHROMEDRIVER_PATH 未設置")
-        chromedriver_path = "/app/.chromedriver/bin/chromedriver"  # 使用默認路徑
-
+    chromedriver_path = os.environ.get("CHROMEDRIVER_PATH", "/app/.chromedriver/bin/chromedriver")
     print(f"使用 ChromeDriver 路徑: {chromedriver_path}")
+    
     service = Service(executable_path=chromedriver_path)
+    route_info = "未知路線"  # 初始化 route_info
 
     try:
         driver = webdriver.Chrome(service=service, options=chrome_options)
