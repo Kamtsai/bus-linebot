@@ -1,23 +1,31 @@
+import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
 
 def get_bus_arrival_time(url, station_name):
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-
-    service = Service(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
-    driver = webdriver.Chrome(service=service, options=chrome_options)
     
+    chrome_bin = os.environ.get("GOOGLE_CHROME_BIN")
+    if chrome_bin:
+        chrome_options.binary_location = chrome_bin
+
+    chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
+    if not chromedriver_path:
+        print("警告：CHROMEDRIVER_PATH 未設置")
+        chromedriver_path = "/app/.chromedriver/bin/chromedriver"  # 使用默認路徑
+
+    print(f"使用 ChromeDriver 路徑: {chromedriver_path}")
+    service = Service(executable_path=chromedriver_path)
+
     try:
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.get(url)
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
         
@@ -63,10 +71,12 @@ def get_bus_arrival_time(url, station_name):
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
     
     except Exception as e:
+        print(f"錯誤: {str(e)}")
         return f"{route_info}: 處理過程中發生錯誤 - {str(e)}"
     
     finally:
-        driver.quit()
+        if 'driver' in locals():
+            driver.quit()
 
 def get_bus_arrival_times(station_name):
     urls = [
@@ -84,5 +94,4 @@ def get_bus_arrival_times(station_name):
     return "\n".join(results)
 
 if __name__ == "__main__":
-    # 本地測試用
     print(get_bus_arrival_times("中正紀念堂"))
