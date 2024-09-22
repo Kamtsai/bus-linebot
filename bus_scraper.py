@@ -89,7 +89,7 @@ def get_bus_arrival_times(station_name):
         result = get_bus_arrival_time(url, station_name)
         results.append(result)
     
-    return "\n".join(results)
+    return "\n\n".join(results)
 
 if __name__ == "__main__":
     print(get_bus_arrival_times("中正紀念堂"))
