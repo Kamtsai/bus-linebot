@@ -25,7 +25,7 @@ def handle_message(event):
     user_message = event.message.text.strip()
     if user_message == "1":
         try:
-            bus_info = get_bus_arrival_times("1")
+            bus_info = get_bus_arrival_times("中正紀念堂")
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=bus_info)
