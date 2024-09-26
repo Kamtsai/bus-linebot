@@ -12,7 +12,9 @@ def clean_arrival_info(info):
     info = re.sub(r'[A-Z]{3}-\d{4}', '', info).strip()
     if info in ['南港分局(向陽)', '南港花園社區二', '瑞湖街口', '永春高中']:
         return '尚未發車'
-    return info
+    if '分' in info or info in ['將到站', '進站中']:
+        return info
+    return '尚未發車'
 
 def get_bus_arrival_time(url, station_name, direction):
     print(f"開始處理 URL: {url}")
