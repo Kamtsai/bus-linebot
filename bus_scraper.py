@@ -1,5 +1,4 @@
 import os
-import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -46,15 +45,25 @@ def get_bus_arrival_time(url, station_name, direction):
         outbound = directions[0].text.strip().split('\n')[0]
         inbound = directions[1].text.strip().split('\n')[0]
         
-        target_direction = 0 if direction == "去程" else 1
+        target_direction = 1 if direction == "返程" else 0
         
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 current_station = cells[target_direction].text.strip().split('\n')[0]
                 if station_name in current_station:
-                    arrival_time = cells[1-target_direction].text.strip()
-                    return f"{route_info}: {station_name} → {outbound if direction == '去程' else inbound} 實時信息: {arrival_time}"
+                    arrival_time = cells[1-target_direction].text.strip().split('\n')[0]
+                    return f"{route_info}: {station_name} → {inbound if direction == '返程' else outbound} 實時信息: {arrival_time}"
+        
+        # 如果沒有找到，嘗試在另一個方向尋找
+        other_direction = 0 if target_direction == 1 else 1
+        for row in rows[1:]:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 2:
+                current_station = cells[other_direction].text.strip().split('\n')[0]
+                if station_name in current_station:
+                    arrival_time = cells[1-other_direction].text.strip().split('\n')[0]
+                    return f"{route_info}: {station_name} → {outbound if direction == '返程' else inbound} 實時信息: {arrival_time} (注意: 在{'去程' if direction == '返程' else '返程'}方向找到)"
         
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
     
