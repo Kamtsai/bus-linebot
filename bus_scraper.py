@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-def get_bus_arrival_time(url, station_name):
+def get_bus_arrival_time(url, station_name, direction):
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -20,7 +20,7 @@ def get_bus_arrival_time(url, station_name):
     print(f"使用 ChromeDriver 路徑: {chromedriver_path}")
     
     service = Service(executable_path=chromedriver_path)
-    route_info = "未知路線"  # 初始化 route_info
+    route_info = "未知路線"
 
     try:
         driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -43,28 +43,30 @@ def get_bus_arrival_time(url, station_name):
         if len(directions) < 2:
             return f"{route_info}: 無法獲取方向信息"
         
+        outbound = directions[0].text.strip().split('\n')[0]
         inbound = directions[1].text.strip().split('\n')[0]
         
-        outbound_stations = []
-        inbound_times = []
+        target_direction = 0 if direction == "去程" else 1
+        target_stations = []
+        target_times = []
         
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
-                station = cells[0].text.strip().split('\n')[0]
+                station = cells[target_direction].text.strip().split('\n')[0]
                 if station and not station.isdigit() and "分" not in station:
-                    outbound_stations.append(station)
-                time_info = cells[1].text.strip().split('\n')
-                inbound_times.extend([t for t in time_info if "分" in t or t in ["將到站", "進站中", "未發車"]])
+                    target_stations.append(station)
+                time_info = cells[target_direction].text.strip().split('\n')
+                target_times.extend([t for t in time_info if "分" in t or t in ["將到站", "進站中", "未發車"]])
         
         target_index = -1
-        for i, station in enumerate(outbound_stations):
+        for i, station in enumerate(target_stations):
             if station_name in station:
                 target_index = i
                 break
         
-        if target_index != -1 and target_index < len(inbound_times):
-            return f"{route_info}: {station_name} → {inbound} 實時信息: {inbound_times[target_index]}"
+        if target_index != -1 and target_index < len(target_times):
+            return f"{route_info}: {station_name} → {outbound if direction == '去程' else inbound} 實時信息: {target_times[target_index]}"
         
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
     
@@ -76,7 +78,7 @@ def get_bus_arrival_time(url, station_name):
         if 'driver' in locals():
             driver.quit()
 
-def get_bus_arrival_times(station_name):
+def get_bus_arrival_times():
     urls = [
         "https://pda5284.gov.taipei/MQS/route.jsp?rid=17869",
         "https://pda5284.gov.taipei/MQS/route.jsp?rid=15708",
@@ -86,10 +88,12 @@ def get_bus_arrival_times(station_name):
     
     results = []
     for url in urls:
-        result = get_bus_arrival_time(url, station_name)
-        results.append(result)
+        result_cks = get_bus_arrival_time(url, "中正紀念堂", "返程")
+        result_xdal = get_bus_arrival_time(url, "信義大安路口", "去程")
+        results.append(result_cks)
+        results.append(result_xdal)
     
     return "\n\n".join(results)
 
 if __name__ == "__main__":
-    print(get_bus_arrival_times("中正紀念堂"))
+    print(get_bus_arrival_times())
