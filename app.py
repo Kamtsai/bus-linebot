@@ -23,9 +23,9 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_message = event.message.text.strip()
-    if user_message == "1":
+    if user_message == "公車資訊":
         try:
-            bus_info = get_bus_arrival_times("中正紀念堂")
+            bus_info = get_bus_arrival_times()
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=bus_info)
@@ -39,7 +39,7 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="請輸入 '1' 來查詢中正紀念堂公車資訊。")
+            TextSendMessage(text="請輸入 '公車資訊' 來查詢公車到站時間。")
         )
 
 if __name__ == "__main__":
