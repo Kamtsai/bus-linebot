@@ -45,17 +45,17 @@ def get_bus_arrival_time(url, station_name, direction):
         outbound = directions[0].text.strip().split('\n')[0]
         inbound = directions[1].text.strip().split('\n')[0]
         
+        target_column = 1 if direction == "返程" else 0
+        info_column = 0 if direction == "返程" else 1
+        
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
-                outbound_station = cells[0].text.strip().split('\n')[0]
-                inbound_station = cells[1].text.strip().split('\n')[0]
-                if station_name in outbound_station:
-                    arrival_time = cells[1].text.strip().split('\n')[0]
-                    return f"{route_info}: {station_name} → {outbound} 實時信息: {arrival_time}"
-                elif station_name in inbound_station:
-                    arrival_time = cells[0].text.strip().split('\n')[0]
-                    return f"{route_info}: {station_name} → {inbound} 實時信息: {arrival_time}"
+                current_station = cells[target_column].text.strip().split('\n')[0]
+                if station_name in current_station:
+                    arrival_time = cells[info_column].text.strip().split('\n')[0]
+                    direction_text = inbound if direction == "返程" else outbound
+                    return f"{route_info}: {station_name} → {direction_text} 實時信息: {arrival_time}"
         
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
     
