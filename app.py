@@ -14,7 +14,16 @@ handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 def background_task(user_id):
     try:
         bus_info = get_bus_arrival_times()
-        line_bot_api.push_message(user_id, TextSendMessage(text=bus_info))
+        info_list = bus_info.split('\n\n')
+        
+        cks_info = [info for info in info_list if '中正紀念堂' in info]
+        xdal_info = [info for info in info_list if '信義大安路口' in info]
+        
+        cks_message = "中正紀念堂站資訊：\n" + '\n'.join(cks_info)
+        xdal_message = "信義大安路口站資訊：\n" + '\n'.join(xdal_info)
+        
+        line_bot_api.push_message(user_id, TextSendMessage(text=cks_message))
+        line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message))
     except Exception as e:
         line_bot_api.push_message(user_id, TextSendMessage(text=f"抱歉，獲取公車資訊時發生錯誤：{str(e)}"))
 
