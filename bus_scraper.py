@@ -1,4 +1,5 @@
 import os
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -54,18 +55,24 @@ def get_bus_arrival_time(url, station_name, direction):
         print(f"尋找站點: {station_name}")
         print(f"方向: {direction}")
         
+        station_found = False
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
-                current_station = cells[target_column].text.strip().split('\n')[0]
+                current_station = cells[target_column].text.strip()
                 print(f"檢查站點: {current_station}")
+                
                 if station_name in current_station:
-                    arrival_time = cells[info_column].text.strip().split('\n')[0]
-                    direction_text = inbound if direction == "返程" else outbound
-                    print(f"找到匹配! 時間: {arrival_time}")
-                    return f"{route_info}: {station_name} → {direction_text} 實時信息: {arrival_time}"
+                    station_found = True
+                    print(f"找到站點: {current_station}")
+                elif station_found:
+                    arrival_info = cells[info_column].text.strip()
+                    print(f"到站信息: {arrival_info}")
+                    if arrival_info and not arrival_info.isalpha():  # 排除純字母的車牌號
+                        direction_text = inbound if direction == "返程" else outbound
+                        return f"{route_info}: {station_name} → {direction_text} 實時信息: {arrival_info}"
         
-        print("未找到匹配的站點")
+        print(f"未找到 {station_name} 站資訊或對應的時間信息")
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
     
     except Exception as e:
