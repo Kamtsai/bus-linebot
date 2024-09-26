@@ -18,7 +18,6 @@ def get_bus_arrival_time(url, station_name, direction):
         chrome_options.binary_location = chrome_bin
 
     chromedriver_path = os.environ.get("CHROMEDRIVER_PATH", "/app/.chromedriver/bin/chromedriver")
-    print(f"使用 ChromeDriver 路徑: {chromedriver_path}")
     
     service = Service(executable_path=chromedriver_path)
     route_info = "未知路線"
@@ -26,22 +25,16 @@ def get_bus_arrival_time(url, station_name, direction):
     try:
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.get(url)
-        # 增加等待時間
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
-        time.sleep(5)  # 額外等待 5 秒
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
         
         route_info = driver.title.split(']')[0].strip('[') if driver.title else "未知路線"
-        print(f"路線信息: {route_info}")
         
         tables = driver.find_elements(By.TAG_NAME, "table")
-        print(f"找到 {len(tables)} 個表格")
-        
         if len(tables) < 3:
             return f"{route_info}: 未找到足夠的表格"
         
         target_table = tables[2]
         rows = target_table.find_elements(By.TAG_NAME, "tr")
-        print(f"目標表格有 {len(rows)} 行")
         
         if len(rows) < 2:
             return f"{route_info}: 表格結構不符合預期"
@@ -52,37 +45,20 @@ def get_bus_arrival_time(url, station_name, direction):
         
         outbound = directions[0].text.strip().split('\n')[0]
         inbound = directions[1].text.strip().split('\n')[0]
-        print(f"去程方向: {outbound}")
-        print(f"返程方向: {inbound}")
         
         target_direction = 0 if direction == "去程" else 1
-        target_stations = []
-        target_times = []
         
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
-                station = cells[target_direction].text.strip().split('\n')[0]
-                if station:
-                    target_stations.append(station)
-                    time_info = cells[1-target_direction].text.strip()
-                    target_times.append(time_info)
-                    print(f"站點: {station}, 時間: {time_info}")
+                current_station = cells[target_direction].text.strip().split('\n')[0]
+                if station_name in current_station:
+                    arrival_time = cells[1-target_direction].text.strip()
+                    return f"{route_info}: {station_name} → {outbound if direction == '去程' else inbound} 實時信息: {arrival_time}"
         
-        target_index = -1
-        for i, station in enumerate(target_stations):
-            if station_name in station:  # 使用部分匹配
-                target_index = i
-                break
-        
-        if target_index != -1:
-            return f"{route_info}: {station_name} → {outbound if direction == '去程' else inbound} 實時信息: {target_times[target_index]}"
-        
-        print(f"未找到站點: {station_name}")
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
     
     except Exception as e:
-        print(f"錯誤: {str(e)}")
         return f"{route_info}: 處理過程中發生錯誤 - {str(e)}"
     
     finally:
