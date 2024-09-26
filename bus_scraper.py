@@ -10,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 def clean_arrival_info(info):
     print(f"清理到站信息: {info}")
     info = re.sub(r'[A-Z]{3}-\d{4}', '', info).strip()
-    if '南港分局' in info:
+    if info in ['南港分局(向陽)', '南港花園社區二', '瑞湖街口', '永春高中']:
         return '尚未發車'
     return info
 
@@ -82,9 +82,9 @@ def get_bus_arrival_time(url, station_name, direction):
         print("在整個表格中搜索站點")
         for i, row in enumerate(rows[1:], 1):
             cells = row.find_elements(By.TAG_NAME, "td")
-            for cell in cells:
+            for j, cell in enumerate(cells):
                 if station_name in cell.text:
-                    adjacent_cell = cells[0] if cell == cells[1] else cells[1]
+                    adjacent_cell = cells[1-j]  # 如果站名在第0列，取第1列；反之亦然
                     arrival_info = clean_arrival_info(adjacent_cell.text.strip())
                     direction_text = inbound if direction == "返程" else outbound
                     print(f"在整個表格中找到站點: {station_name}, 到站信息: {arrival_info}")
