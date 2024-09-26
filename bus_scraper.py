@@ -27,6 +27,7 @@ def get_bus_arrival_time(url, station_name, direction):
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
         
         route_info = driver.title.split(']')[0].strip('[') if driver.title else "未知路線"
+        print(f"路線: {route_info}")
         
         tables = driver.find_elements(By.TAG_NAME, "table")
         if len(tables) < 3:
@@ -44,22 +45,31 @@ def get_bus_arrival_time(url, station_name, direction):
         
         outbound = directions[0].text.strip().split('\n')[0]
         inbound = directions[1].text.strip().split('\n')[0]
+        print(f"去程: {outbound}")
+        print(f"返程: {inbound}")
         
         target_column = 1 if direction == "返程" else 0
         info_column = 0 if direction == "返程" else 1
+        
+        print(f"尋找站點: {station_name}")
+        print(f"方向: {direction}")
         
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 current_station = cells[target_column].text.strip().split('\n')[0]
+                print(f"檢查站點: {current_station}")
                 if station_name in current_station:
                     arrival_time = cells[info_column].text.strip().split('\n')[0]
                     direction_text = inbound if direction == "返程" else outbound
+                    print(f"找到匹配! 時間: {arrival_time}")
                     return f"{route_info}: {station_name} → {direction_text} 實時信息: {arrival_time}"
         
+        print("未找到匹配的站點")
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
     
     except Exception as e:
+        print(f"發生錯誤: {str(e)}")
         return f"{route_info}: 處理過程中發生錯誤 - {str(e)}"
     
     finally:
