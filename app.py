@@ -39,7 +39,7 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    if event.message.text == "公車資訊":
+    if event.message.text == "1":
         user_id = event.source.user_id
         line_bot_api.reply_message(
             event.reply_token,
@@ -49,7 +49,7 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="請輸入 '公車資訊' 來查詢公車到站時間。")
+            TextSendMessage(text="請輸入 '1' 來查詢公車到站時間。")
         )
 
 if __name__ == "__main__":
