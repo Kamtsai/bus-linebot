@@ -56,11 +56,11 @@ def get_bus_arrival_time(url, station_name, direction):
         print(f"方向: {direction}")
         
         station_found = False
-        for row in rows[1:]:
+        for i, row in enumerate(rows[1:], 1):
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 current_station = cells[target_column].text.strip()
-                print(f"檢查站點: {current_station}")
+                print(f"檢查第 {i} 行: {current_station}")
                 
                 if station_name in current_station:
                     station_found = True
@@ -68,7 +68,24 @@ def get_bus_arrival_time(url, station_name, direction):
                 elif station_found:
                     arrival_info = cells[info_column].text.strip()
                     print(f"到站信息: {arrival_info}")
-                    if arrival_info and not arrival_info.isalpha():  # 排除純字母的車牌號
+                    if arrival_info and not arrival_info.isalpha() and "分" in arrival_info:
+                        direction_text = inbound if direction == "返程" else outbound
+                        return f"{route_info}: {station_name} → {direction_text} 實時信息: {arrival_info}"
+                    elif "將到站" in arrival_info or "進站中" in arrival_info:
+                        direction_text = inbound if direction == "返程" else outbound
+                        return f"{route_info}: {station_name} → {direction_text} 實時信息: {arrival_info}"
+        
+        # 如果沒有找到站點，嘗試在整個表格中搜索
+        print("在整個表格中搜索站點")
+        for i, row in enumerate(rows[1:], 1):
+            cells = row.find_elements(By.TAG_NAME, "td")
+            for cell in cells:
+                if station_name in cell.text:
+                    print(f"在第 {i} 行找到站點: {cell.text}")
+                    adjacent_cell = cells[0] if cell == cells[1] else cells[1]
+                    arrival_info = adjacent_cell.text.strip()
+                    print(f"相鄰單元格信息: {arrival_info}")
+                    if arrival_info and not arrival_info.isalpha() and ("分" in arrival_info or "將到站" in arrival_info or "進站中" in arrival_info):
                         direction_text = inbound if direction == "返程" else outbound
                         return f"{route_info}: {station_name} → {direction_text} 實時信息: {arrival_info}"
         
