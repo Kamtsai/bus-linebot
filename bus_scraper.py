@@ -85,7 +85,9 @@ def get_bus_arrival_time(url, station_name, direction):
         for i, row in enumerate(rows[1:], 1):
             cells = row.find_elements(By.TAG_NAME, "td")
             for j, cell in enumerate(cells):
-                if station_name in cell.text:
+                cell_text = cell.text.strip()
+                print(f"檢查單元格內容: {cell_text}")
+                if station_name in cell_text:
                     adjacent_cell = cells[1-j]  # 如果站名在第0列，取第1列；反之亦然
                     arrival_info = clean_arrival_info(adjacent_cell.text.strip())
                     direction_text = inbound if direction == "返程" else outbound
