@@ -11,15 +11,25 @@ from datetime import datetime
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bus_scraper import get_bus_arrival_times
+try:
+    from bus_scraper import get_bus_arrival_times
+    logging.info("Successfully imported get_bus_arrival_times from bus_scraper")
+except ImportError as e:
+    logging.error(f"Failed to import get_bus_arrival_times from bus_scraper: {str(e)}")
+    raise
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
-handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
+try:
+    line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
+    handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
+    logging.info("Successfully initialized LINE Bot API")
+except KeyError as e:
+    logging.error(f"Failed to initialize LINE Bot API. Missing environment variable: {str(e)}")
+    raise
 
 def background_task(user_id):
     try:
