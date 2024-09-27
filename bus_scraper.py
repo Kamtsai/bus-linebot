@@ -84,6 +84,9 @@ def get_bus_info(url):
                     info[f"{inbound_station} ({inbound_name})"] = inbound_time
                     logger.debug(f"目標站點信息: {inbound_station} ({inbound_name}) → {inbound_time}")
         
+        if not info:
+            return f"{route_info}: 當前無可用數據"
+
         result = f"{route_info}:\n" + "\n".join([f"{station} → {time}" for station, time in info.items()])
         logger.debug(f"處理結果:\n{result}")
         return result
