@@ -76,11 +76,11 @@ def get_bus_info(url):
                 inbound_time = cells[-1].text.strip() if len(cells) > 2 else ""
                 
                 if outbound_station in target_stations and target_stations[outbound_station] == "outbound":
-                    info[outbound_station][outbound_name] = outbound_time
+                    info[outbound_station][outbound_name] = outbound_time if outbound_time else "無班次資訊"
                     logger.debug(f"目標站點信息: {outbound_station} ({outbound_name}) → {outbound_time}")
                 
                 if inbound_station in target_stations and target_stations[inbound_station] == "inbound":
-                    info[inbound_station][inbound_name] = inbound_time
+                    info[inbound_station][inbound_name] = inbound_time if inbound_time else "無班次資訊"
                     logger.debug(f"目標站點信息: {inbound_station} ({inbound_name}) → {inbound_time}")
 
         result = f"{route_info}:\n"
@@ -90,7 +90,7 @@ def get_bus_info(url):
                 for direction, time in directions.items():
                     result += f"  {direction}: {time}\n"
             else:
-                result += f"{station}: 當前無班次\n"
+                result += f"{station}: 當前無班次資訊\n"
 
         logger.debug(f"處理結果:\n{result}")
         return result.strip()
