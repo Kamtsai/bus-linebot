@@ -55,19 +55,20 @@ def get_bus_info(url):
             logger.error("表格行數不足")
             return "表格結構不符合預期"
         
-        info = {}
+        route_info = driver.title.split(']')[0].strip('[') if ']' in driver.title else "未知路線"
+        info = [f"{route_info}:"]
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 station = cells[0].text.strip()
                 time = cells[1].text.strip()
-                info[station] = time
+                info.append(f"{station} → {time}")
         
-        return info
+        return "\n".join(info)
     
     except Exception as e:
         logger.exception(f"發生錯誤: {str(e)}")
-        return {}
+        return f"處理過程中發生錯誤 - {str(e)}"
     
     finally:
         if 'driver' in locals():
@@ -83,29 +84,18 @@ def get_bus_arrival_times():
         "https://pda5284.gov.taipei/MQS/route.jsp?rid=10873"   # 20
     ]
     
-    station_names = ["信義大安路口", "中正紀念堂"]
-    results = {station: [] for station in station_names}
-    
+    results = []
     for url in urls:
-        route_results = get_bus_info(url)
-        for station in station_names:
-            results[station].append(route_results.get(station, "資訊不可用"))
+        result = get_bus_info(url)
+        results.append(result)
     
     logger.info("完成獲取公車到站時間")
-    return results
-
-def format_results(results):
-    formatted_results = []
-    for station, times in results.items():
-        formatted_times = [str(time) for time in times]
-        formatted_results.append(f"{station}: {', '.join(formatted_times)}")
-    return "\n".join(formatted_results)
+    return "\n\n".join(results)
 
 if __name__ == "__main__":
     try:
         print("正在獲取公車資訊，請稍候...")
-        results = get_bus_arrival_times()
-        output = format_results(results)
+        output = get_bus_arrival_times()
         print(output)
     except Exception as e:
         error_msg = f"獲取公車資訊時發生錯誤：{str(e)}"
