@@ -97,18 +97,18 @@ def get_bus_arrival_time(url, station_names):
                     if station_name in current_station:
                         arrival_info = clean_arrival_info(cells[1].text.strip())
                         logger.info(f"找到站點: {current_station}, 到站信息: {arrival_info}")
-                        results[station_name] = f"{route_info}: {current_station} → {outbound} 實時信息: {arrival_info}"
+                        results[station_name] = f"{arrival_info}"
                         found = True
                         break
             if not found:
                 logger.warning(f"未找到站點: {station_name}")
-                results[station_name] = f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
+                results[station_name] = "未找到站點信息"
         
         return results
     
     except Exception as e:
         logger.error(f"發生錯誤: {str(e)}", exc_info=True)
-        return {station: f"{route_info}: 處理過程中發生錯誤 - {str(e)}" for station in station_names}
+        return {station: f"處理過程中發生錯誤 - {str(e)}" for station in station_names}
     
     finally:
         if 'driver' in locals():
@@ -125,13 +125,17 @@ def get_bus_arrival_times():
     ]
     
     station_names = ["信義大安路口", "中正紀念堂"]
-    results = []
+    results = {station: [] for station in station_names}
+    
     for url in urls:
         route_results = get_bus_arrival_time(url, station_names)
-        results.extend(route_results.values())
+        for station in station_names:
+            results[station].append(route_results[station])
     
     logger.info("完成獲取公車到站時間")
-    return "\n\n".join(results)
+    return results
 
 if __name__ == "__main__":
-    print(get_bus_arrival_times())
+    results = get_bus_arrival_times()
+    for station, times in results.items():
+        print(f"{station}: {', '.join(times)}")
