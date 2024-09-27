@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 def clean_arrival_info(info):
     logger.info(f"清理到站信息: {info}")
+    if not isinstance(info, str):
+        return "資訊不可用"
     info = re.sub(r'[A-Z]{3}-\d{4}', '', info).strip()
     if '分' in info:
         return info
@@ -53,7 +55,8 @@ def get_bus_arrival_time(url, station_names):
             logger.error("頁面加載超時")
             return {station: f"{route_info}: 頁面加載超時" for station in station_names}
         
-        route_info = driver.title.split(']')[0].strip('[') if driver.title else "未知路線"
+        title = driver.title
+        route_info = title.split(']')[0].strip('[') if title and ']' in title else "未知路線"
         logger.info(f"獲取到路線信息: {route_info}")
         
         tables = driver.find_elements(By.TAG_NAME, "table")
@@ -76,16 +79,6 @@ def get_bus_arrival_time(url, station_names):
             logger.error("表格行數不足")
             return {station: f"{route_info}: 表格結構不符合預期" for station in station_names}
         
-        directions = rows[0].find_elements(By.TAG_NAME, "td")
-        if len(directions) < 2:
-            logger.warning("無法從表格獲取方向信息，使用默認值")
-            outbound = "去程"
-            inbound = "返程"
-        else:
-            outbound = directions[0].text.strip().split('\n')[0]
-            inbound = directions[1].text.strip().split('\n')[0]
-        logger.info(f"去程: {outbound}, 返程: {inbound}")
-        
         results = {}
         for station_name in station_names:
             found = False
@@ -97,7 +90,7 @@ def get_bus_arrival_time(url, station_names):
                     if station_name in current_station:
                         arrival_info = clean_arrival_info(cells[1].text.strip())
                         logger.info(f"找到站點: {current_station}, 到站信息: {arrival_info}")
-                        results[station_name] = f"{arrival_info}"
+                        results[station_name] = arrival_info
                         found = True
                         break
             if not found:
@@ -130,7 +123,7 @@ def get_bus_arrival_times():
     for url in urls:
         route_results = get_bus_arrival_time(url, station_names)
         for station in station_names:
-            results[station].append(route_results[station])
+            results[station].append(route_results.get(station, "資訊不可用"))
     
     logger.info("完成獲取公車到站時間")
     return results
@@ -138,7 +131,7 @@ def get_bus_arrival_times():
 def format_results(results):
     formatted_results = []
     for station, times in results.items():
-        formatted_times = [str(time) if time is not None else "資訊不可用" for time in times]
+        formatted_times = [str(time) for time in times]
         formatted_results.append(f"{station}: {', '.join(formatted_times)}")
     return "\n".join(formatted_results)
 
