@@ -40,6 +40,9 @@ def get_bus_info(url):
         
         logger.debug("頁面加載完成")
         
+        # 輸出整個頁面源代碼以進行調試
+        logger.debug(f"頁面源代碼:\n{driver.page_source}")
+        
         tables = driver.find_elements(By.TAG_NAME, "table")
         logger.debug(f"找到 {len(tables)} 個表格")
         
@@ -60,6 +63,7 @@ def get_bus_info(url):
         
         direction_names = [cell.text.strip() for cell in rows[0].find_elements(By.TAG_NAME, "td")]
         outbound_name, inbound_name = direction_names[:2]
+        logger.debug(f"方向名稱: 去程 - {outbound_name}, 返程 - {inbound_name}")
         
         target_stations = {
             "中正紀念堂": "inbound",
@@ -69,11 +73,14 @@ def get_bus_info(url):
         
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
+            logger.debug(f"當前行包含 {len(cells)} 個單元格")
             if len(cells) >= 2:
                 outbound_station = cells[0].text.strip()
                 inbound_station = cells[-2].text.strip() if len(cells) > 2 else ""
                 outbound_time = cells[1].text.strip()
                 inbound_time = cells[-1].text.strip() if len(cells) > 2 else ""
+                
+                logger.debug(f"解析的數據: 去程站點 - {outbound_station}, 去程時間 - {outbound_time}, 返程站點 - {inbound_station}, 返程時間 - {inbound_time}")
                 
                 if outbound_station in target_stations and target_stations[outbound_station] == "outbound":
                     info[outbound_station][outbound_name] = outbound_time if outbound_time else "無班次資訊"
