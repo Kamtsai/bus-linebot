@@ -1,12 +1,17 @@
+import os
+import logging
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-import os
-import logging
-from bus_scraper import get_bus_arrival_times
 from threading import Thread
 from datetime import datetime
+
+# 添加這行來確保 bus_scraper.py 可以被正確導入
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from bus_scraper import get_bus_arrival_times
 
 app = Flask(__name__)
 
