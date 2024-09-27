@@ -57,16 +57,20 @@ def get_bus_info(url):
         
         route_info = driver.title.split(']')[0].strip('[') if ']' in driver.title else "未知路線"
         logger.debug(f"路線信息: {route_info}")
-        info = [f"{route_info}:"]
+        
+        target_stations = ["中正紀念堂", "信義大安路口"]
+        info = {}
+        
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 station = cells[0].text.strip()
                 time = cells[1].text.strip()
-                info.append(f"{station} → {time}")
-                logger.debug(f"站點信息: {station} → {time}")
+                if station in target_stations:
+                    info[station] = time
+                    logger.debug(f"目標站點信息: {station} → {time}")
         
-        result = "\n".join(info)
+        result = f"{route_info}:\n" + "\n".join([f"{station} → {time}" for station, time in info.items()])
         logger.debug(f"處理結果:\n{result}")
         return result
     
