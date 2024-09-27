@@ -9,7 +9,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-# 設置日誌
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,9 @@ def clean_arrival_info(info):
         return info
     if re.match(r'\d+站', info):
         return f"{info}後到達"
-    return '尚未發車'
+    if info in ['南港分局(向陽)', '永春高中', '臺北車站', '捷運昆陽站']:
+        return '尚未發車'
+    return info
 
 def get_bus_arrival_time(url, station_name, direction):
     logger.info(f"開始處理 URL: {url}")
@@ -83,11 +84,12 @@ def get_bus_arrival_time(url, station_name, direction):
         
         directions = rows[0].find_elements(By.TAG_NAME, "td")
         if len(directions) < 2:
-            logger.error("無法獲取方向信息")
-            return f"{route_info}: 無法獲取方向信息"
-        
-        outbound = directions[0].text.strip().split('\n')[0]
-        inbound = directions[1].text.strip().split('\n')[0]
+            logger.warning("無法從表格獲取方向信息，使用默認值")
+            outbound = "去程"
+            inbound = "返程"
+        else:
+            outbound = directions[0].text.strip().split('\n')[0]
+            inbound = directions[1].text.strip().split('\n')[0]
         logger.info(f"去程: {outbound}, 返程: {inbound}")
         
         target_column = 1 if direction == "返程" else 0
@@ -101,8 +103,19 @@ def get_bus_arrival_time(url, station_name, direction):
                 if station_name in current_station:
                     arrival_info = clean_arrival_info(cells[info_column].text.strip())
                     direction_text = inbound if direction == "返程" else outbound
-                    logger.info(f"找到站點: {station_name}, 到站信息: {arrival_info}")
-                    return f"{route_info}: {station_name} → {direction} ({direction_text}) 實時信息: {arrival_info}"
+                    logger.info(f"找到站點: {current_station}, 到站信息: {arrival_info}")
+                    return f"{route_info}: {current_station} → {direction} ({direction_text}) 實時信息: {arrival_info}"
+        
+        # 如果沒有找到完全匹配的站名，嘗試部分匹配
+        for row in rows[1:]:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 2:
+                current_station = cells[target_column].text.strip()
+                if any(part in current_station for part in station_name.split()):
+                    arrival_info = clean_arrival_info(cells[info_column].text.strip())
+                    direction_text = inbound if direction == "返程" else outbound
+                    logger.info(f"找到部分匹配站點: {current_station}, 到站信息: {arrival_info}")
+                    return f"{route_info}: {current_station} → {direction} ({direction_text}) 實時信息: {arrival_info}"
         
         logger.warning(f"未找到站點: {station_name}")
         return f"{route_info}: 未找到 {station_name} 站資訊或對應的時間信息"
