@@ -100,21 +100,10 @@ def get_bus_arrival_time(url, station_name, direction):
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 current_station = cells[target_column].text.strip()
-                if station_name in current_station:
+                if station_name in current_station or any(part in current_station for part in station_name.split()):
                     arrival_info = clean_arrival_info(cells[info_column].text.strip())
                     direction_text = inbound if direction == "返程" else outbound
                     logger.info(f"找到站點: {current_station}, 到站信息: {arrival_info}")
-                    return f"{route_info}: {current_station} → {direction} ({direction_text}) 實時信息: {arrival_info}"
-        
-        # 如果沒有找到完全匹配的站名，嘗試部分匹配
-        for row in rows[1:]:
-            cells = row.find_elements(By.TAG_NAME, "td")
-            if len(cells) >= 2:
-                current_station = cells[target_column].text.strip()
-                if any(part in current_station for part in station_name.split()):
-                    arrival_info = clean_arrival_info(cells[info_column].text.strip())
-                    direction_text = inbound if direction == "返程" else outbound
-                    logger.info(f"找到部分匹配站點: {current_station}, 到站信息: {arrival_info}")
                     return f"{route_info}: {current_station} → {direction} ({direction_text}) 實時信息: {arrival_info}"
         
         logger.warning(f"未找到站點: {station_name}")
