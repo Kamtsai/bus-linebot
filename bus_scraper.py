@@ -135,7 +135,17 @@ def get_bus_arrival_times():
     logger.info("完成獲取公車到站時間")
     return results
 
-if __name__ == "__main__":
-    results = get_bus_arrival_times()
+def format_results(results):
+    formatted_results = []
     for station, times in results.items():
-        print(f"{station}: {', '.join(times)}")
+        formatted_times = [time if isinstance(time, str) else "資訊不可用" for time in times]
+        formatted_results.append(f"{station}: {', '.join(formatted_times)}")
+    return "\n".join(formatted_results)
+
+if __name__ == "__main__":
+    try:
+        results = get_bus_arrival_times()
+        formatted_output = format_results(results)
+        print(formatted_output)
+    except Exception as e:
+        print(f"獲取公車資訊時發生錯誤：{str(e)}")
