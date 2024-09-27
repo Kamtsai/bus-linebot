@@ -50,11 +50,11 @@ def background_task(user_id):
             cks_info += "\n"
             xdal_info += "\n"
         
-        cks_message = time_message + cks_info
-        xdal_message = time_message + xdal_info
+        cks_message = time_message + cks_info.strip()
+        xdal_message = time_message + xdal_info.strip()
         
-        line_bot_api.push_message(user_id, TextSendMessage(text=cks_message.strip()))
-        line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message.strip()))
+        line_bot_api.push_message(user_id, TextSendMessage(text=cks_message))
+        line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message))
         
         logger.debug(f"已發送中正紀念堂信息和信義大安路口信息")
         
