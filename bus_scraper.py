@@ -65,7 +65,11 @@ def get_bus_info(url):
         rows = target_table.find_elements(By.TAG_NAME, "tr")
         
         direction_names = [td.text.strip() for td in rows[0].find_elements(By.TAG_NAME, "td")]
-        outbound_name, inbound_name = direction_names[:2]
+        if len(direction_names) >= 2:
+            outbound_name, inbound_name = direction_names[:2]
+        else:
+            logger.error("無法確定方向名稱")
+            return f"{route_info}: 無法確定方向名稱"
         
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
