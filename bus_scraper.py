@@ -55,26 +55,26 @@ def get_bus_info(url):
             logger.error("表格行數不足")
             return "表格結構不符合預期"
         
-        info = []
+        info = {}
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 station = cells[0].text.strip()
                 time = cells[1].text.strip()
-                info.append(f"{station}: {time}")
+                info[station] = time
         
-        return "\n".join(info)
+        return info
     
     except Exception as e:
         logger.exception(f"發生錯誤: {str(e)}")
-        return f"處理過程中發生錯誤 - {str(e)}"
+        return {}
     
     finally:
         if 'driver' in locals():
             logger.debug("關閉瀏覽器")
             driver.quit()
 
-def get_all_bus_info():
+def get_bus_arrival_times():
     logger.info("開始獲取公車到站時間")
     urls = [
         "https://pda5284.gov.taipei/MQS/route.jsp?rid=17869",  # 88區
@@ -83,18 +83,29 @@ def get_all_bus_info():
         "https://pda5284.gov.taipei/MQS/route.jsp?rid=10873"   # 20
     ]
     
-    results = []
+    station_names = ["信義大安路口", "中正紀念堂"]
+    results = {station: [] for station in station_names}
+    
     for url in urls:
-        result = get_bus_info(url)
-        results.append(result)
+        route_results = get_bus_info(url)
+        for station in station_names:
+            results[station].append(route_results.get(station, "資訊不可用"))
     
     logger.info("完成獲取公車到站時間")
-    return "\n\n".join(results)
+    return results
+
+def format_results(results):
+    formatted_results = []
+    for station, times in results.items():
+        formatted_times = [str(time) for time in times]
+        formatted_results.append(f"{station}: {', '.join(formatted_times)}")
+    return "\n".join(formatted_results)
 
 if __name__ == "__main__":
     try:
         print("正在獲取公車資訊，請稍候...")
-        output = get_all_bus_info()
+        results = get_bus_arrival_times()
+        output = format_results(results)
         print(output)
     except Exception as e:
         error_msg = f"獲取公車資訊時發生錯誤：{str(e)}"
