@@ -27,8 +27,8 @@ def clean_arrival_info(info):
         return info
     if re.match(r'\d+站', info):
         return f"{info}後到達"
-    if info in ['南港分局(向陽)', '永春高中', '臺北車站', '捷運昆陽站']:
-        return '尚未發車'
+    if info in ['南港分局(向陽)', '永春高中', '臺北車站', '捷運昆陽站', '青年公園']:
+        return '終點站'
     return info
 
 def get_bus_arrival_time(url, station_name, direction):
