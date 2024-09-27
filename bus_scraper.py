@@ -138,7 +138,7 @@ def get_bus_arrival_times():
 def format_results(results):
     formatted_results = []
     for station, times in results.items():
-        formatted_times = [time if isinstance(time, str) else "資訊不可用" for time in times]
+        formatted_times = [str(time) for time in times]  # Convert all items to strings
         formatted_results.append(f"{station}: {', '.join(formatted_times)}")
     return "\n".join(formatted_results)
 
