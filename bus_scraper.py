@@ -56,6 +56,7 @@ def get_bus_info(url):
             return "表格結構不符合預期"
         
         route_info = driver.title.split(']')[0].strip('[') if ']' in driver.title else "未知路線"
+        logger.debug(f"路線信息: {route_info}")
         info = [f"{route_info}:"]
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
@@ -63,8 +64,11 @@ def get_bus_info(url):
                 station = cells[0].text.strip()
                 time = cells[1].text.strip()
                 info.append(f"{station} → {time}")
+                logger.debug(f"站點信息: {station} → {time}")
         
-        return "\n".join(info)
+        result = "\n".join(info)
+        logger.debug(f"處理結果:\n{result}")
+        return result
     
     except Exception as e:
         logger.exception(f"發生錯誤: {str(e)}")
@@ -89,8 +93,10 @@ def get_bus_arrival_times():
         result = get_bus_info(url)
         results.append(result)
     
+    final_result = "\n\n".join(results)
     logger.info("完成獲取公車到站時間")
-    return "\n\n".join(results)
+    logger.debug(f"最終結果:\n{final_result}")
+    return final_result
 
 if __name__ == "__main__":
     try:
