@@ -15,10 +15,13 @@ logger = logging.getLogger(__name__)
 line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 
+from datetime import datetime
+
 def background_task(user_id):
     try:
         logger.debug("開始執行背景任務")
         bus_info = get_bus_arrival_times()
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         logger.debug(f"獲取到的公車信息:\n{bus_info}")
         
         info_list = bus_info.split('\n\n')
@@ -29,20 +32,22 @@ def background_task(user_id):
         logger.debug(f"中正紀念堂信息:\n{cks_info}")
         logger.debug(f"信義大安路口信息:\n{xdal_info}")
         
+        time_message = f"資訊更新時間: {current_time}\n\n"
+        
         if cks_info:
-            cks_message = "中正紀念堂站資訊（返程）：\n" + cks_info
+            cks_message = time_message + "中正紀念堂站資訊（返程）：\n" + cks_info
             line_bot_api.push_message(user_id, TextSendMessage(text=cks_message))
             logger.debug(f"已發送中正紀念堂信息")
         else:
-            line_bot_api.push_message(user_id, TextSendMessage(text="未找到中正紀念堂站資訊"))
+            line_bot_api.push_message(user_id, TextSendMessage(text=time_message + "未找到中正紀念堂站資訊"))
             logger.debug("未找到中正紀念堂站資訊")
         
         if xdal_info:
-            xdal_message = "信義大安路口站資訊（去程）：\n" + xdal_info
+            xdal_message = time_message + "信義大安路口站資訊（去程）：\n" + xdal_info
             line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message))
             logger.debug(f"已發送信義大安路口信息")
         else:
-            line_bot_api.push_message(user_id, TextSendMessage(text="未找到信義大安路口站資訊"))
+            line_bot_api.push_message(user_id, TextSendMessage(text=time_message + "未找到信義大安路口站資訊"))
             logger.debug("未找到信義大安路口站資訊")
         
     except Exception as e:
