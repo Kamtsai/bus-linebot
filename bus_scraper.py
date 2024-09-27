@@ -7,7 +7,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -41,10 +40,7 @@ def get_bus_info(url):
         
         logger.debug("頁面加載完成")
         
-        page_source = driver.page_source
-        soup = BeautifulSoup(page_source, 'html.parser')
-        
-        route_info = soup.title.string.strip('[]')
+        route_info = driver.title.strip('[]')
         logger.debug(f"路線信息: {route_info}")
         
         target_stations = {
@@ -53,8 +49,7 @@ def get_bus_info(url):
         }
         info = {station: {} for station in target_stations}
         
-        # 嘗試找到包含公車資訊的表格
-        tables = soup.find_all('table')
+        tables = driver.find_elements(By.TAG_NAME, "table")
         logger.debug(f"找到 {len(tables)} 個表格")
         
         target_table = None
@@ -67,13 +62,13 @@ def get_bus_info(url):
             logger.error("未找到包含公車資訊的表格")
             return f"{route_info}: 未找到包含公車資訊的表格"
         
-        rows = target_table.find_all('tr')
+        rows = target_table.find_elements(By.TAG_NAME, "tr")
         
-        direction_names = [td.text.strip() for td in rows[0].find_all('td')]
+        direction_names = [td.text.strip() for td in rows[0].find_elements(By.TAG_NAME, "td")]
         outbound_name, inbound_name = direction_names[:2]
         
         for row in rows[1:]:
-            cells = row.find_all('td')
+            cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) >= 2:
                 outbound_station = cells[0].text.strip()
                 outbound_time = cells[1].text.strip()
