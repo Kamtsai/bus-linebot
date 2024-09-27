@@ -16,14 +16,21 @@ def background_task(user_id):
         bus_info = get_bus_arrival_times()
         info_list = bus_info.split('\n\n')
         
-        cks_info = [info for info in info_list if '中正紀念堂' in info]
-        xdal_info = [info for info in info_list if '信義大安路口' in info]
+        cks_info = "\n".join([info for info in info_list if '中正紀念堂' in info])
+        xdal_info = "\n".join([info for info in info_list if '信義大安路口' in info])
         
-        cks_message = "中正紀念堂站資訊：\n" + '\n'.join(cks_info)
-        xdal_message = "信義大安路口站資訊：\n" + '\n'.join(xdal_info)
+        if cks_info:
+            cks_message = "中正紀念堂站資訊：\n" + cks_info
+            line_bot_api.push_message(user_id, TextSendMessage(text=cks_message))
+        else:
+            line_bot_api.push_message(user_id, TextSendMessage(text="未找到中正紀念堂站資訊"))
         
-        line_bot_api.push_message(user_id, TextSendMessage(text=cks_message))
-        line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message))
+        if xdal_info:
+            xdal_message = "信義大安路口站資訊：\n" + xdal_info
+            line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message))
+        else:
+            line_bot_api.push_message(user_id, TextSendMessage(text="未找到信義大安路口站資訊"))
+        
     except Exception as e:
         line_bot_api.push_message(user_id, TextSendMessage(text=f"抱歉，獲取公車資訊時發生錯誤：{str(e)}"))
 
