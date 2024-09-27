@@ -6,6 +6,7 @@ import os
 import logging
 from bus_scraper import get_bus_arrival_times
 from threading import Thread
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -14,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
-
-from datetime import datetime
 
 def background_task(user_id):
     try:
@@ -85,4 +84,5 @@ def handle_message(event):
         )
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
