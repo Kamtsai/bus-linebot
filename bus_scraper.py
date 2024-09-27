@@ -27,6 +27,12 @@ def clean_arrival_info(info):
         return '終點站'
     return info
 
+def get_route_info(title):
+    if not isinstance(title, str):
+        return "未知路線"
+    match = re.search(r'\[(.*?)\]', title)
+    return match.group(1) if match else "未知路線"
+
 def get_bus_arrival_time(url, station_names):
     logger.info(f"開始處理 URL: {url}")
     chrome_options = Options()
@@ -55,8 +61,7 @@ def get_bus_arrival_time(url, station_names):
             logger.error("頁面加載超時")
             return {station: f"{route_info}: 頁面加載超時" for station in station_names}
         
-        title = driver.title
-        route_info = title.split(']')[0].strip('[') if title and ']' in title else "未知路線"
+        route_info = get_route_info(driver.title)
         logger.info(f"獲取到路線信息: {route_info}")
         
         tables = driver.find_elements(By.TAG_NAME, "table")
@@ -142,3 +147,4 @@ if __name__ == "__main__":
         print(formatted_output)
     except Exception as e:
         print(f"獲取公車資訊時發生錯誤：{str(e)}")
+        logger.exception("發生未預期的錯誤")
