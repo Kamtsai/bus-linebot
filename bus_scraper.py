@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -40,30 +41,11 @@ def get_bus_info(url):
         
         logger.debug("頁面加載完成")
         
-        # 輸出整個頁面源代碼以進行調試
-        logger.debug(f"頁面源代碼:\n{driver.page_source}")
+        page_source = driver.page_source
+        soup = BeautifulSoup(page_source, 'html.parser')
         
-        tables = driver.find_elements(By.TAG_NAME, "table")
-        logger.debug(f"找到 {len(tables)} 個表格")
-        
-        if len(tables) < 3:
-            logger.error("未找到足夠的表格")
-            return "未找到足夠的表格"
-        
-        target_table = tables[2]
-        rows = target_table.find_elements(By.TAG_NAME, "tr")
-        logger.debug(f"目標表格有 {len(rows)} 行")
-        
-        if len(rows) < 2:
-            logger.error("表格行數不足")
-            return "表格結構不符合預期"
-        
-        route_info = driver.title.split(']')[0].strip('[') if ']' in driver.title else "未知路線"
+        route_info = soup.title.string.strip('[]')
         logger.debug(f"路線信息: {route_info}")
-        
-        direction_names = [cell.text.strip() for cell in rows[0].find_elements(By.TAG_NAME, "td")]
-        outbound_name, inbound_name = direction_names[:2]
-        logger.debug(f"方向名稱: 去程 - {outbound_name}, 返程 - {inbound_name}")
         
         target_stations = {
             "中正紀念堂": "inbound",
@@ -71,24 +53,33 @@ def get_bus_info(url):
         }
         info = {station: {} for station in target_stations}
         
+        tables = soup.find_all('table', class_='formattable1')
+        if len(tables) < 3:
+            logger.error("未找到足夠的表格")
+            return "未找到足夠的表格"
+        
+        target_table = tables[2]
+        rows = target_table.find_all('tr')
+        
+        direction_names = [td.text.strip() for td in rows[0].find_all('td')]
+        outbound_name, inbound_name = direction_names[:2]
+        
         for row in rows[1:]:
-            cells = row.find_elements(By.TAG_NAME, "td")
-            logger.debug(f"當前行包含 {len(cells)} 個單元格")
+            cells = row.find_all('td')
             if len(cells) >= 2:
                 outbound_station = cells[0].text.strip()
-                inbound_station = cells[-2].text.strip() if len(cells) > 2 else ""
                 outbound_time = cells[1].text.strip()
-                inbound_time = cells[-1].text.strip() if len(cells) > 2 else ""
-                
-                logger.debug(f"解析的數據: 去程站點 - {outbound_station}, 去程時間 - {outbound_time}, 返程站點 - {inbound_station}, 返程時間 - {inbound_time}")
                 
                 if outbound_station in target_stations and target_stations[outbound_station] == "outbound":
                     info[outbound_station][outbound_name] = outbound_time if outbound_time else "無班次資訊"
                     logger.debug(f"目標站點信息: {outbound_station} ({outbound_name}) → {outbound_time}")
                 
-                if inbound_station in target_stations and target_stations[inbound_station] == "inbound":
-                    info[inbound_station][inbound_name] = inbound_time if inbound_time else "無班次資訊"
-                    logger.debug(f"目標站點信息: {inbound_station} ({inbound_name}) → {inbound_time}")
+                if len(cells) > 2:
+                    inbound_station = cells[-2].text.strip()
+                    inbound_time = cells[-1].text.strip()
+                    if inbound_station in target_stations and target_stations[inbound_station] == "inbound":
+                        info[inbound_station][inbound_name] = inbound_time if inbound_time else "無班次資訊"
+                        logger.debug(f"目標站點信息: {inbound_station} ({inbound_name}) → {inbound_time}")
 
         result = f"{route_info}:\n"
         for station, directions in info.items():
