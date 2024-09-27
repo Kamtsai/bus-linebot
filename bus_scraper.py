@@ -53,14 +53,20 @@ def get_bus_info(url):
         }
         info = {station: {} for station in target_stations}
         
-        tables = soup.find_all('table', class_='formattable1')
+        # 嘗試找到包含公車資訊的表格
+        tables = soup.find_all('table')
         logger.debug(f"找到 {len(tables)} 個表格")
         
-        if len(tables) < 3:
-            logger.error("未找到足夠的表格")
-            return f"{route_info}: 未找到足夠的表格"
+        target_table = None
+        for table in tables:
+            if '去程' in table.text and '返程' in table.text:
+                target_table = table
+                break
         
-        target_table = tables[2]
+        if not target_table:
+            logger.error("未找到包含公車資訊的表格")
+            return f"{route_info}: 未找到包含公車資訊的表格"
+        
         rows = target_table.find_all('tr')
         
         direction_names = [td.text.strip() for td in rows[0].find_all('td')]
