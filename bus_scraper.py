@@ -54,9 +54,11 @@ def get_bus_info(url):
         info = {station: {} for station in target_stations}
         
         tables = soup.find_all('table', class_='formattable1')
+        logger.debug(f"找到 {len(tables)} 個表格")
+        
         if len(tables) < 3:
             logger.error("未找到足夠的表格")
-            return "未找到足夠的表格"
+            return f"{route_info}: 未找到足夠的表格"
         
         target_table = tables[2]
         rows = target_table.find_all('tr')
@@ -95,7 +97,7 @@ def get_bus_info(url):
     
     except Exception as e:
         logger.exception(f"發生錯誤: {str(e)}")
-        return f"處理過程中發生錯誤 - {str(e)}"
+        return f"{route_info}: 處理過程中發生錯誤 - {str(e)}"
     
     finally:
         if 'driver' in locals():
