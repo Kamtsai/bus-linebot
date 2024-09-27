@@ -30,7 +30,7 @@ def background_task(user_id):
         logger.debug(f"信義大安路口信息:\n{xdal_info}")
         
         if cks_info:
-            cks_message = "中正紀念堂站資訊：\n" + cks_info
+            cks_message = "中正紀念堂站資訊（返程）：\n" + cks_info
             line_bot_api.push_message(user_id, TextSendMessage(text=cks_message))
             logger.debug(f"已發送中正紀念堂信息")
         else:
@@ -38,7 +38,7 @@ def background_task(user_id):
             logger.debug("未找到中正紀念堂站資訊")
         
         if xdal_info:
-            xdal_message = "信義大安路口站資訊：\n" + xdal_info
+            xdal_message = "信義大安路口站資訊（去程）：\n" + xdal_info
             line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message))
             logger.debug(f"已發送信義大安路口信息")
         else:
