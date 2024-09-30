@@ -55,20 +55,23 @@ def get_bus_info(url):
         info = {}
         for station, (xpath, direction) in target_stations.items():
             try:
-                elements = driver.find_elements(By.XPATH, xpath)
-                if elements:
-                    time_info = elements[0].text.strip()
-                    if (station == "中正紀念堂" and direction == "返程") or (station == "信義大安路口" and direction == "去程"):
-                        info[station] = f"{direction}: {time_info}"
-                        logger.debug(f"目標站點信息: {station} ({direction}) → {time_info}")
+                go_elements = driver.find_elements(By.XPATH, f"//tr[@class='ttego1' or @class='ttego2']//a[contains(text(), '{station}')]/../following-sibling::td")
+                back_elements = driver.find_elements(By.XPATH, f"//tr[@class='tteback1' or @class='tteback2']//a[contains(text(), '{station}')]/../following-sibling::td")
+                
+                if station == "中正紀念堂" and back_elements:
+                    time_info = back_elements[0].text.strip()
+                    info[station] = f"返程: {time_info}"
+                    logger.debug(f"目標站點信息: {station} (返程) → {time_info}")
+                elif station == "信義大安路口" and go_elements:
+                    time_info = go_elements[0].text.strip()
+                    info[station] = f"去程: {time_info}"
+                    logger.debug(f"目標站點信息: {station} (去程) → {time_info}")
                 else:
-                    if (station == "中正紀念堂" and direction == "返程") or (station == "信義大安路口" and direction == "去程"):
-                        info[station] = f"{direction}: 未找到資訊"
-                        logger.warning(f"未找到站點 {station} 的信息")
+                    info[station] = f"{direction}: 未找到資訊"
+                    logger.warning(f"未找到站點 {station} 的信息")
             except Exception as e:
                 logger.error(f"處理站點 {station} 時發生錯誤: {str(e)}")
-                if (station == "中正紀念堂" and direction == "返程") or (station == "信義大安路口" and direction == "去程"):
-                    info[station] = f"{direction}: 處理時發生錯誤"
+                info[station] = f"{direction}: 處理時發生錯誤"
 
         result = f"{route_info}:\n" + "\n".join([f"{station}: {info}" for station, info in info.items()])
         logger.debug(f"處理結果:\n{result}")
