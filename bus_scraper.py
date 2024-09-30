@@ -105,19 +105,21 @@ def get_bus_arrival_times():
     
     current_time = datetime.now().strftime("%Y-%m-30 %H:%M:%S")
     
-    final_result = f"資訊更新時間: {current_time}\n\n"
-    final_result += "中正紀念堂站資訊（返程）：\n"
+    cks_info = f"資訊更新時間: {current_time}\n\n中正紀念堂站資訊（返程）：\n"
     for route, time in results["中正紀念堂"].items():
-        final_result += f"{route}: {time}\n"
+        cks_info += f"{route}: {time}\n"
     
-    final_result += f"\n資訊更新時間: {current_time}\n\n"
-    final_result += "信義大安路口站資訊（去程）：\n"
+    xdal_info = f"資訊更新時間: {current_time}\n\n信義大安路口站資訊（去程）：\n"
     for route, time in results["信義大安路口"].items():
-        final_result += f"{route}: {time}\n"
+        xdal_info += f"{route}: {time}\n"
     
     logger.info("完成獲取公車到站時間")
-    logger.debug(f"最終結果:\n{final_result}")
-    return final_result
+    logger.debug(f"中正紀念堂站資訊:\n{cks_info}")
+    logger.debug(f"信義大安路口站資訊:\n{xdal_info}")
+    return cks_info, xdal_info
 
 if __name__ == "__main__":
-    print(get_bus_arrival_times())
+    cks_info, xdal_info = get_bus_arrival_times()
+    print(cks_info)
+    print("\n" + "="*50 + "\n")
+    print(xdal_info)
