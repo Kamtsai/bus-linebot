@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from datetime import datetime
+from pytz import timezone
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -103,7 +104,9 @@ def get_bus_arrival_times():
         for station in result:
             results[station].update(result[station])
     
-    current_time = datetime.now().strftime("%Y-%m-30 %H:%M:%S")
+    # 使用台北時區
+    taipei_tz = timezone('Asia/Taipei')
+    current_time = datetime.now(taipei_tz).strftime("%Y-%m-%d %H:%M:%S")
     
     cks_info = f"資訊更新時間: {current_time}\n\n中正紀念堂站資訊（返程）：\n"
     for route, time in results["中正紀念堂"].items():
