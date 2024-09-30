@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -10,6 +11,14 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+def extract_minutes(time_info):
+    if '分' in time_info:
+        return time_info
+    elif '將到站' in time_info or '進站中' in time_info:
+        return time_info
+    else:
+        return '未發車'
 
 def get_bus_info(url):
     logger.debug(f"開始處理 URL: {url}")
@@ -48,24 +57,19 @@ def get_bus_info(url):
         logger.debug(f"路線信息: {route_info}")
         
         target_stations = {
-            "中正紀念堂": ("//a[contains(text(), '中正紀念堂')]/../following-sibling::td", "返程"),
-            "信義大安路口": ("//a[contains(text(), '信義大安路口')]/../following-sibling::td", "去程")
+            "中正紀念堂": ("返程", "tteback"),
+            "信義大安路口": ("去程", "ttego")
         }
         
         info = {}
-        for station, (xpath, direction) in target_stations.items():
+        for station, (direction, class_prefix) in target_stations.items():
             try:
-                go_elements = driver.find_elements(By.XPATH, f"//tr[@class='ttego1' or @class='ttego2']//a[contains(text(), '{station}')]/../following-sibling::td")
-                back_elements = driver.find_elements(By.XPATH, f"//tr[@class='tteback1' or @class='tteback2']//a[contains(text(), '{station}')]/../following-sibling::td")
-                
-                if station == "中正紀念堂" and back_elements:
-                    time_info = back_elements[0].text.strip()
-                    info[station] = f"返程: {time_info}"
-                    logger.debug(f"目標站點信息: {station} (返程) → {time_info}")
-                elif station == "信義大安路口" and go_elements:
-                    time_info = go_elements[0].text.strip()
-                    info[station] = f"去程: {time_info}"
-                    logger.debug(f"目標站點信息: {station} (去程) → {time_info}")
+                elements = driver.find_elements(By.XPATH, f"//tr[contains(@class, '{class_prefix}')]//a[contains(text(), '{station}')]/../following-sibling::td")
+                if elements:
+                    time_info = elements[0].text.strip()
+                    processed_time = extract_minutes(time_info)
+                    info[station] = f"{direction}: {processed_time}"
+                    logger.debug(f"目標站點信息: {station} ({direction}) → {processed_time}")
                 else:
                     info[station] = f"{direction}: 未找到資訊"
                     logger.warning(f"未找到站點 {station} 的信息")
