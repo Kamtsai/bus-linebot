@@ -33,12 +33,23 @@ def get_bus_info(url):
         driver.get(url)
         
         try:
-            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "spnUpdateTime")))
         except TimeoutException:
             logger.error("頁面加載超時")
             return "頁面加載超時"
         
         logger.debug("頁面加載完成")
+        
+        # 執行JavaScript來更新頁面數據
+        driver.execute_script("queryDyna();")
+        
+        # 等待數據更新
+        WebDriverWait(driver, 10).until(EC.staleness_of(driver.find_element(By.ID, "spnUpdateTime")))
+        
+        # 保存完整的 HTML 內容
+        with open('page_source.html', 'w', encoding='utf-8') as f:
+            f.write(driver.page_source)
+        logger.debug("已保存頁面源代碼到 page_source.html")
         
         route_info = driver.title.strip('[]')
         logger.debug(f"路線信息: {route_info}")
@@ -49,44 +60,19 @@ def get_bus_info(url):
         }
         info = {station: {} for station in target_stations}
         
-        tables = driver.find_elements(By.TAG_NAME, "table")
-        logger.debug(f"找到 {len(tables)} 個表格")
-        
-        target_table = None
-        for table in tables:
-            if '去程' in table.text and '返程' in table.text:
-                target_table = table
-                break
-        
-        if not target_table:
-            logger.error("未找到包含公車資訊的表格")
-            return f"{route_info}: 未找到包含公車資訊的表格"
-        
-        rows = target_table.find_elements(By.TAG_NAME, "tr")
-        
-        direction_names = [td.text.strip() for td in rows[0].find_elements(By.TAG_NAME, "td")]
-        if len(direction_names) >= 2:
-            outbound_name, inbound_name = direction_names[:2]
-        else:
-            logger.error("無法確定方向名稱")
-            return f"{route_info}: 無法確定方向名稱"
-        
-        for row in rows[1:]:
-            cells = row.find_elements(By.TAG_NAME, "td")
-            if len(cells) >= 2:
-                outbound_station = cells[0].text.strip()
-                outbound_time = cells[1].text.strip()
+        for station in target_stations:
+            try:
+                station_element = driver.find_element(By.XPATH, f"//a[contains(text(), '{station}')]")
+                parent_row = station_element.find_element(By.XPATH, "./ancestor::tr")
+                time_cell = parent_row.find_element(By.XPATH, "./td[2]")
+                arrival_time = time_cell.text.strip()
                 
-                if outbound_station in target_stations and target_stations[outbound_station] == "outbound":
-                    info[outbound_station][outbound_name] = outbound_time if outbound_time else "無班次資訊"
-                    logger.debug(f"目標站點信息: {outbound_station} ({outbound_name}) → {outbound_time}")
-                
-                if len(cells) > 2:
-                    inbound_station = cells[-2].text.strip()
-                    inbound_time = cells[-1].text.strip()
-                    if inbound_station in target_stations and target_stations[inbound_station] == "inbound":
-                        info[inbound_station][inbound_name] = inbound_time if inbound_time else "無班次資訊"
-                        logger.debug(f"目標站點信息: {inbound_station} ({inbound_name}) → {inbound_time}")
+                direction = "去程" if target_stations[station] == "outbound" else "返程"
+                info[station][direction] = arrival_time if arrival_time else "無班次資訊"
+                logger.debug(f"目標站點信息: {station} ({direction}) → {arrival_time}")
+            except NoSuchElementException:
+                logger.warning(f"未找到站點 {station} 的信息")
+                info[station]["無方向"] = "未找到站點信息"
 
         result = f"{route_info}:\n"
         for station, directions in info.items():
