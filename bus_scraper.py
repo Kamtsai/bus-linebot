@@ -105,12 +105,12 @@ def get_bus_arrival_times():
     
     current_time = datetime.now().strftime("%Y-%m-30 %H:%M:%S")
     
-    final_result = f"資訊更新時間: {current_time}\n"
+    final_result = f"資訊更新時間: {current_time}\n\n"
     final_result += "中正紀念堂站資訊（返程）：\n"
     for route, time in results["中正紀念堂"].items():
         final_result += f"{route}: {time}\n"
     
-    final_result += "\n資訊更新時間: {current_time}\n"
+    final_result += f"\n資訊更新時間: {current_time}\n\n"
     final_result += "信義大安路口站資訊（去程）：\n"
     for route, time in results["信義大安路口"].items():
         final_result += f"{route}: {time}\n"
