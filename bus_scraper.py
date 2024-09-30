@@ -26,6 +26,8 @@ def get_bus_info(url):
     
     service = Service(executable_path=chromedriver_path)
 
+    route_info = "未知路線"  # 初始化 route_info
+
     try:
         logger.debug("啟動 Chrome 瀏覽器")
         driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -40,19 +42,24 @@ def get_bus_info(url):
         
         logger.debug("頁面加載完成")
         
+        route_info = driver.title.strip('[]')
+        logger.debug(f"路線信息: {route_info}")
+        
         # 執行JavaScript來更新頁面數據
         driver.execute_script("queryDyna();")
         
-        # 等待數據更新
-        WebDriverWait(driver, 10).until(EC.staleness_of(driver.find_element(By.ID, "spnUpdateTime")))
+        # 等待數據更新，但不使用 staleness_of
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.text_to_be_present_in_element((By.ID, "spnUpdateTime"), ":")
+            )
+        except TimeoutException:
+            logger.warning("等待數據更新超時，繼續處理")
         
         # 保存完整的 HTML 內容
         with open('page_source.html', 'w', encoding='utf-8') as f:
             f.write(driver.page_source)
         logger.debug("已保存頁面源代碼到 page_source.html")
-        
-        route_info = driver.title.strip('[]')
-        logger.debug(f"路線信息: {route_info}")
         
         target_stations = {
             "中正紀念堂": "inbound",
