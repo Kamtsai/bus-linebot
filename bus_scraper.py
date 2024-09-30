@@ -1,6 +1,5 @@
 import os
 import logging
-import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -8,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -61,29 +61,27 @@ def get_bus_info(url):
             "信義大安路口": ("去程", "ttego")
         }
         
-        info = {}
+        info = {station: {} for station in target_stations}
         for station, (direction, class_prefix) in target_stations.items():
             try:
                 elements = driver.find_elements(By.XPATH, f"//tr[contains(@class, '{class_prefix}')]//a[contains(text(), '{station}')]/../following-sibling::td")
                 if elements:
                     time_info = elements[0].text.strip()
                     processed_time = extract_minutes(time_info)
-                    info[station] = f"{direction}: {processed_time}"
+                    info[station][route_info] = processed_time
                     logger.debug(f"目標站點信息: {station} ({direction}) → {processed_time}")
                 else:
-                    info[station] = f"{direction}: 未找到資訊"
+                    info[station][route_info] = "未找到資訊"
                     logger.warning(f"未找到站點 {station} 的信息")
             except Exception as e:
                 logger.error(f"處理站點 {station} 時發生錯誤: {str(e)}")
-                info[station] = f"{direction}: 處理時發生錯誤"
+                info[station][route_info] = "處理時發生錯誤"
 
-        result = f"{route_info}:\n" + "\n".join([f"{station}: {info}" for station, info in info.items()])
-        logger.debug(f"處理結果:\n{result}")
-        return result.strip()
+        return info
     
     except Exception as e:
         logger.exception(f"發生錯誤: {str(e)}")
-        return f"{route_info}: 處理過程中發生錯誤 - {str(e)}"
+        return {station: {route_info: f"處理過程中發生錯誤 - {str(e)}"} for station in target_stations}
     
     finally:
         if 'driver' in locals():
@@ -99,12 +97,24 @@ def get_bus_arrival_times():
         "https://pda5284.gov.taipei/MQS/route.jsp?rid=10873"   # 20
     ]
     
-    results = []
+    results = {"中正紀念堂": {}, "信義大安路口": {}}
     for url in urls:
         result = get_bus_info(url)
-        results.append(result)
+        for station in result:
+            results[station].update(result[station])
     
-    final_result = "\n\n".join(results)
+    current_time = datetime.now().strftime("%Y-%m-30 %H:%M:%S")
+    
+    final_result = f"資訊更新時間: {current_time}\n"
+    final_result += "中正紀念堂站資訊（返程）：\n"
+    for route, time in results["中正紀念堂"].items():
+        final_result += f"{route}: {time}\n"
+    
+    final_result += "\n資訊更新時間: {current_time}\n"
+    final_result += "信義大安路口站資訊（去程）：\n"
+    for route, time in results["信義大安路口"].items():
+        final_result += f"{route}: {time}\n"
+    
     logger.info("完成獲取公車到站時間")
     logger.debug(f"最終結果:\n{final_result}")
     return final_result
