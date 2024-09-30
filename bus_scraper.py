@@ -56,10 +56,10 @@ def get_bus_info(url):
         except TimeoutException:
             logger.warning("等待數據更新超時，繼續處理")
         
-        # 保存完整的 HTML 內容
-        with open('page_source.html', 'w', encoding='utf-8') as f:
-            f.write(driver.page_source)
-        logger.debug("已保存頁面源代碼到 page_source.html")
+        # 將 HTML 內容輸出到日誌
+        logger.debug("頁面 HTML 內容開始")
+        logger.debug(driver.page_source)
+        logger.debug("頁面 HTML 內容結束")
         
         target_stations = {
             "中正紀念堂": "inbound",
