@@ -26,70 +26,48 @@ def get_bus_info(url):
     
     service = Service(executable_path=chromedriver_path)
 
-    route_info = "未知路線"  # 初始化 route_info
-
     try:
         logger.debug("啟動 Chrome 瀏覽器")
         driver = webdriver.Chrome(service=service, options=chrome_options)
         logger.debug(f"訪問 URL: {url}")
         driver.get(url)
         
-        try:
-            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "spnUpdateTime")))
-        except TimeoutException:
-            logger.error("頁面加載超時")
-            return "頁面加載超時"
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "spnUpdateTime")))
         
         logger.debug("頁面加載完成")
-        
-        route_info = driver.title.strip('[]')
-        logger.debug(f"路線信息: {route_info}")
         
         # 執行JavaScript來更新頁面數據
         driver.execute_script("queryDyna();")
         
-        # 等待數據更新，但不使用 staleness_of
-        try:
-            WebDriverWait(driver, 10).until(
-                EC.text_to_be_present_in_element((By.ID, "spnUpdateTime"), ":")
-            )
-        except TimeoutException:
-            logger.warning("等待數據更新超時，繼續處理")
+        # 等待數據更新
+        WebDriverWait(driver, 10).until(
+            EC.text_to_be_present_in_element((By.ID, "spnUpdateTime"), ":")
+        )
         
-        # 將 HTML 內容輸出到日誌
-        logger.debug("頁面 HTML 內容開始")
-        logger.debug(driver.page_source)
-        logger.debug("頁面 HTML 內容結束")
+        route_info = driver.title.split(']')[0].strip('[')
+        logger.debug(f"路線信息: {route_info}")
         
         target_stations = {
-            "中正紀念堂": "inbound",
-            "信義大安路口": "outbound"
+            "中正紀念堂": ("//a[contains(text(), '中正紀念堂')]/../following-sibling::td", "返程"),
+            "信義大安路口": ("//a[contains(text(), '信義大安路口')]/../following-sibling::td", "去程")
         }
-        info = {station: {} for station in target_stations}
         
-        for station in target_stations:
+        info = {}
+        for station, (xpath, direction) in target_stations.items():
             try:
-                station_element = driver.find_element(By.XPATH, f"//a[contains(text(), '{station}')]")
-                parent_row = station_element.find_element(By.XPATH, "./ancestor::tr")
-                time_cell = parent_row.find_element(By.XPATH, "./td[2]")
-                arrival_time = time_cell.text.strip()
-                
-                direction = "去程" if target_stations[station] == "outbound" else "返程"
-                info[station][direction] = arrival_time if arrival_time else "無班次資訊"
-                logger.debug(f"目標站點信息: {station} ({direction}) → {arrival_time}")
-            except NoSuchElementException:
-                logger.warning(f"未找到站點 {station} 的信息")
-                info[station]["無方向"] = "未找到站點信息"
+                elements = driver.find_elements(By.XPATH, xpath)
+                if elements:
+                    time_info = elements[0].text.strip()
+                    info[station] = f"{direction}: {time_info}"
+                    logger.debug(f"目標站點信息: {station} ({direction}) → {time_info}")
+                else:
+                    info[station] = f"{direction}: 未找到資訊"
+                    logger.warning(f"未找到站點 {station} 的信息")
+            except Exception as e:
+                logger.error(f"處理站點 {station} 時發生錯誤: {str(e)}")
+                info[station] = f"{direction}: 處理時發生錯誤"
 
-        result = f"{route_info}:\n"
-        for station, directions in info.items():
-            if directions:
-                result += f"{station}:\n"
-                for direction, time in directions.items():
-                    result += f"  {direction}: {time}\n"
-            else:
-                result += f"{station}: 當前無班次資訊\n"
-
+        result = f"{route_info}:\n" + "\n".join([f"{station}: {info}" for station, info in info.items()])
         logger.debug(f"處理結果:\n{result}")
         return result.strip()
     
