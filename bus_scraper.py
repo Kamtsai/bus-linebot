@@ -21,6 +21,9 @@ def extract_minutes(time_info):
     else:
         return '未發車'
 
+def clean_route_name(route_info):
+    return route_info.replace('(公車雙向轉乘優惠)', '').strip()
+
 def get_bus_info(url):
     logger.debug(f"開始處理 URL: {url}")
     chrome_options = Options()
@@ -54,7 +57,7 @@ def get_bus_info(url):
             EC.text_to_be_present_in_element((By.ID, "spnUpdateTime"), ":")
         )
         
-        route_info = driver.title.split(']')[0].strip('[')
+        route_info = clean_route_name(driver.title.split(']')[0].strip('['))
         logger.debug(f"路線信息: {route_info}")
         
         target_stations = {
