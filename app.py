@@ -11,60 +11,23 @@ from datetime import datetime
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-try:
-    from bus_scraper import get_bus_arrival_times
-    logging.info("Successfully imported get_bus_arrival_times from bus_scraper")
-except ImportError as e:
-    logging.error(f"Failed to import get_bus_arrival_times from bus_scraper: {str(e)}")
-    raise
+from bus_scraper import get_bus_arrival_times
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-try:
-    line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
-    handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
-    logging.info("Successfully initialized LINE Bot API")
-except KeyError as e:
-    logging.error(f"Failed to initialize LINE Bot API. Missing environment variable: {str(e)}")
-    raise
+line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
+handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 
 def background_task(user_id):
     try:
         logger.debug("開始執行背景任務")
-        bus_info = get_bus_arrival_times()
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        logger.debug(f"獲取到的公車信息:\n{bus_info}")
+        cks_info, xdal_info = get_bus_arrival_times()
         
-        info_list = bus_info.split('\n\n')
-        
-        time_message = f"資訊更新時間: {current_time}\n\n"
-        
-        cks_info = "中正紀念堂站資訊（返程）：\n"
-        xdal_info = "信義大安路口站資訊（去程）：\n"
-        
-        for route_info in info_list:
-            route_lines = route_info.split('\n')
-            route_name = route_lines[0]
-            cks_info += f"{route_name}\n"
-            xdal_info += f"{route_name}\n"
-            
-            for line in route_lines[1:]:
-                if '中正紀念堂' in line:
-                    cks_info += f"{line}\n"
-                elif '信義大安路口' in line:
-                    xdal_info += f"{line}\n"
-            
-            cks_info += "\n"
-            xdal_info += "\n"
-        
-        cks_message = time_message + cks_info.strip()
-        xdal_message = time_message + xdal_info.strip()
-        
-        line_bot_api.push_message(user_id, TextSendMessage(text=cks_message))
-        line_bot_api.push_message(user_id, TextSendMessage(text=xdal_message))
+        line_bot_api.push_message(user_id, TextSendMessage(text=cks_info.strip()))
+        line_bot_api.push_message(user_id, TextSendMessage(text=xdal_info.strip()))
         
         logger.debug(f"已發送中正紀念堂信息和信義大安路口信息")
         
