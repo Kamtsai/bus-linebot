@@ -58,14 +58,17 @@ def get_bus_info(url):
                 elements = driver.find_elements(By.XPATH, xpath)
                 if elements:
                     time_info = elements[0].text.strip()
-                    info[station] = f"{direction}: {time_info}"
-                    logger.debug(f"目標站點信息: {station} ({direction}) → {time_info}")
+                    if (station == "中正紀念堂" and direction == "返程") or (station == "信義大安路口" and direction == "去程"):
+                        info[station] = f"{direction}: {time_info}"
+                        logger.debug(f"目標站點信息: {station} ({direction}) → {time_info}")
                 else:
-                    info[station] = f"{direction}: 未找到資訊"
-                    logger.warning(f"未找到站點 {station} 的信息")
+                    if (station == "中正紀念堂" and direction == "返程") or (station == "信義大安路口" and direction == "去程"):
+                        info[station] = f"{direction}: 未找到資訊"
+                        logger.warning(f"未找到站點 {station} 的信息")
             except Exception as e:
                 logger.error(f"處理站點 {station} 時發生錯誤: {str(e)}")
-                info[station] = f"{direction}: 處理時發生錯誤"
+                if (station == "中正紀念堂" and direction == "返程") or (station == "信義大安路口" and direction == "去程"):
+                    info[station] = f"{direction}: 處理時發生錯誤"
 
         result = f"{route_info}:\n" + "\n".join([f"{station}: {info}" for station, info in info.items()])
         logger.debug(f"處理結果:\n{result}")
